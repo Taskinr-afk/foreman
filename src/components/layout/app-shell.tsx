@@ -7,7 +7,9 @@ import { DashboardView } from '@/components/dashboard/dashboard-view';
 import { ReportForm } from '@/components/intake/report-form';
 import { ReviewQueue } from '@/components/review/review-queue';
 import { OshaLog } from '@/components/log/osha-log';
+import { SettingsView } from '@/components/settings/settings-view';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect } from 'react';
 
 const pageTransition = {
   initial: { opacity: 0, y: 8, filter: 'blur(4px)' },
@@ -56,13 +58,22 @@ function ViewRouter() {
         {activeView === 'incidents' && <PlaceholderView title="All Incidents" description="Full incident list with filtering and search. Coming next." />}
         {activeView === 'forms' && <PlaceholderView title="Export Forms" description="Generate OSHA 300A summary, 301 forms, and ITA CSV exports." />}
         {activeView === 'audit' && <PlaceholderView title="Audit Trail" description="Complete history of all actions taken on incidents." />}
-        {activeView === 'settings' && <PlaceholderView title="Settings" description="Establishment info, user roles, and notification preferences." />}
+        {activeView === 'settings' && <SettingsView />}
       </motion.div>
     </AnimatePresence>
   );
 }
 
 export function AppShell() {
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('foreman-theme');
+      if (saved === 'light' || saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    } catch {}
+  }, []);
+
   return (
     <div className="flex h-dvh w-full bg-[var(--bg)]">
       <Sidebar />
