@@ -49,7 +49,7 @@ function Nav({ onSignIn }: { onSignIn: () => void }) {
             Sign In
           </button>
           <Link
-            href="/foreman/app"
+            href="/foreman/app/"
             className="text-sm font-bold px-5 py-2.5 no-underline transition-all hover:brightness-90"
             style={{
               background: YELLOW,
@@ -124,7 +124,7 @@ function Hero() {
 
           <div className="flex flex-wrap gap-4">
             <Link
-              href="/foreman/app"
+              href="/foreman/app/"
               className="inline-flex items-center gap-2 text-base font-bold px-8 py-4 no-underline transition-all hover:brightness-90"
               style={{
                 background: YELLOW,
@@ -379,7 +379,7 @@ function BuiltFor() {
               manager signs off from anywhere. OSHA gets a clean, defensible record.
             </p>
             <Link
-              href="/foreman/app"
+              href="/foreman/app/"
               className="inline-flex items-center gap-2 text-sm font-bold px-6 py-3 no-underline transition-all hover:brightness-90"
               style={{
                 background: BLACK,
@@ -471,7 +471,7 @@ function CTA() {
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
-              href="/foreman/app"
+              href="/foreman/app/"
               className="inline-flex items-center gap-2 text-base font-bold px-8 py-4 no-underline transition-all hover:bg-[#1a1a1a]"
               style={{
                 background: BLACK,
@@ -559,7 +559,7 @@ function SignInModal({ open, onClose }: { open: boolean; onClose: () => void }) 
         </div>
 
         <Link
-          href="/foreman/app"
+          href="/foreman/app/"
           className="flex items-center justify-center w-full py-3.5 text-sm font-bold tracking-wider no-underline transition-all hover:brightness-90"
           style={{
             background: YELLOW,
