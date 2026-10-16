@@ -1,7 +1,8 @@
 'use client';
 
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { AppShell } from '@/components/layout/app-shell';
 
 const YELLOW = '#FFE500';
 const BLACK = '#0A0A0A';
@@ -25,7 +26,7 @@ function RepeatingText({ text, count = 20, className = '' }: { text: string; cou
   );
 }
 
-function Nav({ onSignIn }: { onSignIn: () => void }) {
+function Nav({ onSignIn, onEnterApp }: { onSignIn: () => void; onEnterApp: () => void }) {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[#0A0A0A]/80 border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
@@ -47,9 +48,9 @@ function Nav({ onSignIn }: { onSignIn: () => void }) {
           >
             Sign In
           </button>
-          <a
-            href="/foreman/app/"
-            className="text-sm font-bold px-5 py-2.5 no-underline transition-all hover:brightness-90"
+          <button
+            onClick={onEnterApp}
+            className="text-sm font-bold px-5 py-2.5 transition-all hover:brightness-90 cursor-pointer border-none"
             style={{
               background: YELLOW,
               color: BLACK,
@@ -57,14 +58,14 @@ function Nav({ onSignIn }: { onSignIn: () => void }) {
             }}
           >
             Get Started
-          </a>
+          </button>
         </div>
       </div>
     </nav>
   );
 }
 
-function Hero() {
+function Hero({ onEnterApp }: { onEnterApp: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const y = useTransform(scrollYProgress, [0, 1], [0, 150]);
@@ -122,9 +123,9 @@ function Hero() {
           </p>
 
           <div className="flex flex-wrap gap-4">
-            <a
-              href="/foreman/app/"
-              className="inline-flex items-center gap-2 text-base font-bold px-8 py-4 no-underline transition-all hover:brightness-90"
+            <button
+              onClick={onEnterApp}
+              className="inline-flex items-center gap-2 text-base font-bold px-8 py-4 transition-all hover:brightness-90 cursor-pointer border-none"
               style={{
                 background: YELLOW,
                 color: BLACK,
@@ -135,7 +136,7 @@ function Hero() {
               <svg viewBox="0 0 20 20" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 10h10M11 6l4 4-4 4" />
               </svg>
-            </a>
+            </button>
             <a
               href="#features"
               className="inline-flex items-center gap-2 text-base font-bold px-8 py-4 border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-all no-underline"
@@ -346,7 +347,7 @@ function Stats() {
   );
 }
 
-function BuiltFor() {
+function BuiltFor({ onEnterApp }: { onEnterApp: () => void }) {
   return (
     <section className="relative py-24 lg:py-32 overflow-hidden" style={{ background: OFF_WHITE }}>
       <div className="max-w-7xl mx-auto px-4 lg:px-8">
@@ -377,9 +378,9 @@ function BuiltFor() {
               Supervisors report from the field. The engine classifies in seconds. Your safety
               manager signs off from anywhere. OSHA gets a clean, defensible record.
             </p>
-            <a
-              href="/foreman/app/"
-              className="inline-flex items-center gap-2 text-sm font-bold px-6 py-3 no-underline transition-all hover:brightness-90"
+            <button
+              onClick={onEnterApp}
+              className="inline-flex items-center gap-2 text-sm font-bold px-6 py-3 transition-all hover:brightness-90 cursor-pointer border-none"
               style={{
                 background: BLACK,
                 color: YELLOW,
@@ -390,7 +391,7 @@ function BuiltFor() {
               <svg viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 10h10M11 6l4 4-4 4" />
               </svg>
-            </a>
+            </button>
           </motion.div>
 
           <motion.div
@@ -431,7 +432,7 @@ function BuiltFor() {
   );
 }
 
-function CTA() {
+function CTA({ onEnterApp }: { onEnterApp: () => void }) {
   return (
     <section className="relative py-24 lg:py-32 overflow-hidden" style={{ background: YELLOW }}>
       <div className="absolute inset-0 overflow-hidden">
@@ -469,9 +470,9 @@ function CTA() {
             Every incident classified. Every decision documented. Every log defensible.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <a
-              href="/foreman/app/"
-              className="inline-flex items-center gap-2 text-base font-bold px-8 py-4 no-underline transition-all hover:bg-[#1a1a1a]"
+            <button
+              onClick={onEnterApp}
+              className="inline-flex items-center gap-2 text-base font-bold px-8 py-4 transition-all hover:bg-[#1a1a1a] cursor-pointer border-none"
               style={{
                 background: BLACK,
                 color: YELLOW,
@@ -482,7 +483,7 @@ function CTA() {
               <svg viewBox="0 0 20 20" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 10h10M11 6l4 4-4 4" />
               </svg>
-            </a>
+            </button>
           </div>
         </motion.div>
       </div>
@@ -490,7 +491,7 @@ function CTA() {
   );
 }
 
-function SignInModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function SignInModal({ open, onClose, onEnterApp }: { open: boolean; onClose: () => void; onEnterApp: () => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -557,9 +558,9 @@ function SignInModal({ open, onClose }: { open: boolean; onClose: () => void }) 
           </div>
         </div>
 
-        <a
-          href="/foreman/app/"
-          className="flex items-center justify-center w-full py-3.5 text-sm font-bold tracking-wider no-underline transition-all hover:brightness-90"
+        <button
+          onClick={onEnterApp}
+          className="flex items-center justify-center w-full py-3.5 text-sm font-bold tracking-wider transition-all hover:brightness-90 cursor-pointer border-none"
           style={{
             background: YELLOW,
             color: BLACK,
@@ -567,7 +568,7 @@ function SignInModal({ open, onClose }: { open: boolean; onClose: () => void }) 
           }}
         >
           SIGN IN
-        </a>
+        </button>
 
         <p className="text-center text-xs text-white/30 mt-4" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
           Demo mode - no real authentication
@@ -601,6 +602,20 @@ function Footer() {
 
 export default function LandingPage() {
   const [signInOpen, setSignInOpen] = useState(false);
+  const [showApp, setShowApp] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (window.location.hash === '#app') setShowApp(true);
+    } catch {}
+  }, []);
+
+  const enterApp = () => {
+    try { window.location.hash = 'app'; } catch {}
+    setShowApp(true);
+  };
+
+  if (showApp) return <AppShell />;
 
   return (
     <>
@@ -608,14 +623,14 @@ export default function LandingPage() {
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
       `}</style>
       <div className="w-full min-h-screen" style={{ background: BLACK }}>
-        <Nav onSignIn={() => setSignInOpen(true)} />
-        <Hero />
+        <Nav onSignIn={() => setSignInOpen(true)} onEnterApp={enterApp} />
+        <Hero onEnterApp={enterApp} />
         <Features />
         <Stats />
-        <BuiltFor />
-        <CTA />
+        <BuiltFor onEnterApp={enterApp} />
+        <CTA onEnterApp={enterApp} />
         <Footer />
-        <SignInModal open={signInOpen} onClose={() => setSignInOpen(false)} />
+        <SignInModal open={signInOpen} onClose={() => setSignInOpen(false)} onEnterApp={enterApp} />
       </div>
     </>
   );
