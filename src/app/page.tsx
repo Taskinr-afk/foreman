@@ -2,7 +2,6 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef, useState } from 'react';
-import Link from 'next/link';
 
 const YELLOW = '#FFE500';
 const BLACK = '#0A0A0A';
@@ -30,7 +29,7 @@ function Nav({ onSignIn }: { onSignIn: () => void }) {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[#0A0A0A]/80 border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
-        <Link href="/foreman/" className="flex items-center gap-3 no-underline">
+        <a href="/foreman/" className="flex items-center gap-3 no-underline">
           <div className="w-8 h-8 flex items-center justify-center" style={{ background: YELLOW }}>
             <svg viewBox="0 0 24 24" className="w-5 h-5" fill={BLACK} stroke="none">
               <path d="M12 2L2 7v2h20V7L12 2zM4 11v8h3v-8H4zm5 0v8h3v-8H9zm5 0v8h3v-8h-3zm5 0v8h3v-8h-3zM2 21h20v2H2v-2z" />
@@ -39,7 +38,7 @@ function Nav({ onSignIn }: { onSignIn: () => void }) {
           <span className="text-white font-bold text-lg tracking-tight" style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
             FOREMAN
           </span>
-        </Link>
+        </a>
         <div className="flex items-center gap-3">
           <button
             onClick={onSignIn}
@@ -48,7 +47,7 @@ function Nav({ onSignIn }: { onSignIn: () => void }) {
           >
             Sign In
           </button>
-          <Link
+          <a
             href="/foreman/app/"
             className="text-sm font-bold px-5 py-2.5 no-underline transition-all hover:brightness-90"
             style={{
@@ -58,7 +57,7 @@ function Nav({ onSignIn }: { onSignIn: () => void }) {
             }}
           >
             Get Started
-          </Link>
+          </a>
         </div>
       </div>
     </nav>
@@ -123,7 +122,7 @@ function Hero() {
           </p>
 
           <div className="flex flex-wrap gap-4">
-            <Link
+            <a
               href="/foreman/app/"
               className="inline-flex items-center gap-2 text-base font-bold px-8 py-4 no-underline transition-all hover:brightness-90"
               style={{
@@ -136,7 +135,7 @@ function Hero() {
               <svg viewBox="0 0 20 20" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 10h10M11 6l4 4-4 4" />
               </svg>
-            </Link>
+            </a>
             <a
               href="#features"
               className="inline-flex items-center gap-2 text-base font-bold px-8 py-4 border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-all no-underline"
@@ -378,7 +377,7 @@ function BuiltFor() {
               Supervisors report from the field. The engine classifies in seconds. Your safety
               manager signs off from anywhere. OSHA gets a clean, defensible record.
             </p>
-            <Link
+            <a
               href="/foreman/app/"
               className="inline-flex items-center gap-2 text-sm font-bold px-6 py-3 no-underline transition-all hover:brightness-90"
               style={{
@@ -391,7 +390,7 @@ function BuiltFor() {
               <svg viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 10h10M11 6l4 4-4 4" />
               </svg>
-            </Link>
+            </a>
           </motion.div>
 
           <motion.div
@@ -470,7 +469,7 @@ function CTA() {
             Every incident classified. Every decision documented. Every log defensible.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link
+            <a
               href="/foreman/app/"
               className="inline-flex items-center gap-2 text-base font-bold px-8 py-4 no-underline transition-all hover:bg-[#1a1a1a]"
               style={{
@@ -483,7 +482,7 @@ function CTA() {
               <svg viewBox="0 0 20 20" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 10h10M11 6l4 4-4 4" />
               </svg>
-            </Link>
+            </a>
           </div>
         </motion.div>
       </div>
@@ -558,7 +557,7 @@ function SignInModal({ open, onClose }: { open: boolean; onClose: () => void }) 
           </div>
         </div>
 
-        <Link
+        <a
           href="/foreman/app/"
           className="flex items-center justify-center w-full py-3.5 text-sm font-bold tracking-wider no-underline transition-all hover:brightness-90"
           style={{
@@ -568,7 +567,7 @@ function SignInModal({ open, onClose }: { open: boolean; onClose: () => void }) 
           }}
         >
           SIGN IN
-        </Link>
+        </a>
 
         <p className="text-center text-xs text-white/30 mt-4" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
           Demo mode - no real authentication
