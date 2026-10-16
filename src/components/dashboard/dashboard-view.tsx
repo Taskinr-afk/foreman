@@ -2,7 +2,7 @@
 
 import { StatsCards } from './stats-cards';
 import { RecentIncidents } from './recent-incidents';
-import { ComplianceChart } from './compliance-chart';
+import { SevereAlerts } from '../alerts/severe-alerts';
 import { motion } from 'framer-motion';
 
 const stagger = {
@@ -26,16 +26,14 @@ export function DashboardView() {
           Safety Overview
         </h2>
       </motion.div>
+      <motion.div variants={fadeUp} className="space-y-3">
+        <SevereAlerts />
+      </motion.div>
       <motion.div variants={fadeUp}>
         <StatsCards />
       </motion.div>
-      <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3">
-          <RecentIncidents />
-        </div>
-        <div className="lg:col-span-2">
-          <ComplianceChart />
-        </div>
+      <motion.div variants={fadeUp}>
+        <RecentIncidents />
       </motion.div>
     </motion.div>
   );

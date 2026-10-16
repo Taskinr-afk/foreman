@@ -1,23 +1,14 @@
 'use client';
 
 import { useAppStore } from '@/lib/stores/app-store';
-import { SEVERITY_LABELS, STATUS_LABELS } from '@/lib/schemas/incident';
-import type { IncidentStatus, Severity } from '@/lib/schemas/incident';
+import { OUTCOME_LABELS, REVIEW_LABELS } from '@/lib/schemas/incident';
+import { finalOutcome, OUTCOME_STYLES } from '@/lib/osha';
 import { motion } from 'framer-motion';
 
-const STATUS_COLORS: Record<IncidentStatus, { bg: string; text: string }> = {
-  'pending-review': { bg: 'var(--accent-subtle)', text: 'var(--accent)' },
-  reviewed: { bg: 'var(--engine-subtle)', text: 'var(--engine)' },
-  recorded: { bg: 'var(--blue-subtle)', text: 'var(--blue)' },
-  rejected: { bg: 'var(--alert-subtle)', text: 'var(--alert)' },
-};
-
-const SEVERITY_COLORS: Record<Severity, string> = {
-  'first-aid': 'var(--engine)',
-  medical: 'var(--accent)',
-  restricted: 'var(--accent)',
-  'days-away': 'var(--alert)',
-  death: 'var(--alert)',
+const REVIEW_STYLES = {
+  pending: { bg: 'var(--accent-subtle)', text: 'var(--accent)' },
+  accepted: { bg: 'var(--engine-subtle)', text: 'var(--engine)' },
+  overridden: { bg: 'var(--blue-subtle)', text: 'var(--blue)' },
 };
 
 export function RecentIncidents() {
@@ -31,83 +22,63 @@ export function RecentIncidents() {
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
-        <h3
-          className="text-sm font-semibold text-[var(--ink)]"
-          style={{ fontFamily: 'var(--font-display)' }}
-        >
+        <h3 className="text-sm font-semibold text-[var(--ink)]" style={{ fontFamily: 'var(--font-display)' }}>
           Recent Incidents
         </h3>
         <motion.button
-          onClick={() => setActiveView('incidents')}
+          onClick={() => setActiveView('review')}
           className="text-xs font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors"
-          style={{ transitionDuration: 'var(--duration-fast)' }}
           whileHover={{ x: 2 }}
           whileTap={{ scale: 0.95 }}
         >
-          View all
+          Go to Review Queue
         </motion.button>
       </div>
 
       <div className="divide-y divide-[var(--border)]">
-        {incidents.slice(0, 5).map((incident, i) => {
-          const statusStyle = STATUS_COLORS[incident.status as IncidentStatus];
+        {incidents.slice(0, 6).map((incident, i) => {
+          const outcome = finalOutcome(incident);
+          const review = REVIEW_STYLES[incident.review.status];
           return (
             <motion.div
               key={incident.id}
-              className="flex items-center gap-4 px-5 py-3.5 cursor-pointer"
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-5 py-3.5"
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{
-                duration: 0.3,
-                delay: 0.05 * i,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              whileHover={{
-                backgroundColor: 'var(--card-hover)',
-                x: 2,
-              }}
+              transition={{ duration: 0.3, delay: 0.05 * i, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ backgroundColor: 'var(--card-hover)', x: 2 }}
             >
-              <motion.div
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: SEVERITY_COLORS[incident.severity as Severity] }}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 20, delay: 0.1 + 0.05 * i }}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="text-sm font-medium text-[var(--ink)]"
-                    style={{ fontFamily: 'var(--font-body)' }}
-                  >
-                    {incident.employeeName}
-                  </span>
-                  <span
-                    className="text-[11px] font-mono text-[var(--ink-faint)]"
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                  >
-                    {incident.id}
-                  </span>
+              <div className="flex items-start gap-4 flex-1 min-w-0">
+                <motion.div
+                  className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5"
+                  style={{ backgroundColor: OUTCOME_STYLES[outcome].text }}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 20, delay: 0.1 + 0.05 * i }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-[var(--ink)]">
+                      {incident.privacyCase ? 'Privacy Case' : incident.employeeName}
+                    </span>
+                    <span className="text-[11px] text-[var(--ink-faint)]" style={{ fontFamily: 'var(--font-mono)' }}>
+                      {incident.caseNumber ?? incident.id}
+                    </span>
+                    {incident.severeAlert && !incident.severeAlert.reportedAt && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--alert)' }}>
+                        Severe
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-[var(--ink-muted)] truncate mt-0.5">{incident.description}</p>
                 </div>
-                <p className="text-xs text-[var(--ink-muted)] truncate mt-0.5">
-                  {incident.description}
-                </p>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <span
-                  className="text-[11px] font-medium"
-                  style={{ color: SEVERITY_COLORS[incident.severity as Severity] }}
-                >
-                  {SEVERITY_LABELS[incident.severity as Severity]}
+              <div className="flex items-center gap-3 flex-shrink-0 pl-6 sm:pl-0">
+                <span className="text-[11px] font-medium" style={{ color: OUTCOME_STYLES[outcome].text }}>
+                  {OUTCOME_LABELS[outcome]}
                 </span>
-                <span
-                  className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-                  style={{
-                    backgroundColor: statusStyle.bg,
-                    color: statusStyle.text,
-                  }}
-                >
-                  {STATUS_LABELS[incident.status as IncidentStatus]}
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: review.bg, color: review.text }}>
+                  {REVIEW_LABELS[incident.review.status]}
                 </span>
               </div>
             </motion.div>

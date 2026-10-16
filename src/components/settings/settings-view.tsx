@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAppStore } from '@/lib/stores/app-store';
+import type { Establishment } from '@/lib/schemas/incident';
 
 type Theme = 'system' | 'light' | 'dark';
 
@@ -43,7 +45,21 @@ const fadeUp = {
   transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const },
 };
 
+const ESTABLISHMENT_FIELDS: { key: keyof Establishment; label: string; numeric?: boolean; hint?: string }[] = [
+  { key: 'companyName', label: 'Company Name' },
+  { key: 'establishmentName', label: 'Establishment / Site Name', hint: 'OSHA logs are kept per establishment' },
+  { key: 'ein', label: 'EIN' },
+  { key: 'naicsCode', label: 'NAICS Code' },
+  { key: 'streetAddress', label: 'Street Address' },
+  { key: 'city', label: 'City' },
+  { key: 'state', label: 'State' },
+  { key: 'zip', label: 'ZIP' },
+  { key: 'annualAverageEmployees', label: 'Annual Average Employees', numeric: true },
+  { key: 'totalHoursWorked', label: 'Total Hours Worked (this year)', numeric: true, hint: 'Used for TRIR and DART' },
+];
+
 export function SettingsView() {
+  const { establishment, updateEstablishment } = useAppStore();
   const [theme, setTheme] = useState<Theme>('system');
 
   useEffect(() => {
@@ -127,22 +143,21 @@ export function SettingsView() {
         <p className="text-xs text-[var(--ink-muted)] mb-5">Required for OSHA Form 300A annual summary</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-[var(--ink-muted)] mb-1.5">Company Name</label>
-            <input type="text" defaultValue="Demo Corp" className="input-field" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--ink-muted)] mb-1.5">NAICS Code</label>
-            <input type="text" defaultValue="236220" className="input-field" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--ink-muted)] mb-1.5">Street Address</label>
-            <input type="text" defaultValue="123 Industrial Blvd" className="input-field" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--ink-muted)] mb-1.5">City, State, ZIP</label>
-            <input type="text" defaultValue="Houston, TX 77001" className="input-field" />
-          </div>
+          {ESTABLISHMENT_FIELDS.map((f) => (
+            <div key={f.key}>
+              <label className="block text-xs font-medium text-[var(--ink-muted)] mb-1.5">{f.label}</label>
+              <input
+                type={f.numeric ? 'number' : 'text'}
+                min={f.numeric ? 0 : undefined}
+                value={establishment[f.key]}
+                onChange={(e) =>
+                  updateEstablishment({ [f.key]: f.numeric ? Math.max(0, Number(e.target.value)) : e.target.value })
+                }
+                className="input-field"
+              />
+              {f.hint && <p className="text-[11px] text-[var(--ink-faint)] mt-1">{f.hint}</p>}
+            </div>
+          ))}
         </div>
       </motion.div>
     </motion.div>

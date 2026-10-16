@@ -8,8 +8,9 @@ import { ReportForm } from '@/components/intake/report-form';
 import { ReviewQueue } from '@/components/review/review-queue';
 import { OshaLog } from '@/components/log/osha-log';
 import { SettingsView } from '@/components/settings/settings-view';
+import { AuditTrail } from '@/components/audit/audit-trail';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const pageTransition = {
   initial: { opacity: 0, y: 8, filter: 'blur(4px)' },
@@ -42,11 +43,11 @@ function PlaceholderView({ title, description }: { title: string; description: s
   );
 }
 
-function ViewRouter() {
+function ViewRouter({ onSwitch }: { onSwitch: () => void }) {
   const { activeView } = useAppStore();
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait" onExitComplete={onSwitch}>
       <motion.div
         key={activeView}
         {...pageTransition}
@@ -57,7 +58,7 @@ function ViewRouter() {
         {activeView === 'log' && <OshaLog />}
         {activeView === 'incidents' && <PlaceholderView title="All Incidents" description="Full incident list with filtering and search. Coming next." />}
         {activeView === 'forms' && <PlaceholderView title="Export Forms" description="Generate OSHA 300A summary, 301 forms, and ITA CSV exports." />}
-        {activeView === 'audit' && <PlaceholderView title="Audit Trail" description="Complete history of all actions taken on incidents." />}
+        {activeView === 'audit' && <AuditTrail />}
         {activeView === 'settings' && <SettingsView />}
       </motion.div>
     </AnimatePresence>
@@ -65,6 +66,7 @@ function ViewRouter() {
 }
 
 export function AppShell() {
+  const mainRef = useRef<HTMLElement>(null);
   useEffect(() => {
     try {
       const saved = localStorage.getItem('foreman-theme');
@@ -79,8 +81,8 @@ export function AppShell() {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <AppHeader />
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          <ViewRouter />
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-4 lg:p-6">
+          <ViewRouter onSwitch={() => mainRef.current?.scrollTo({ top: 0 })} />
         </main>
       </div>
     </div>

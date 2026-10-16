@@ -4,64 +4,50 @@ import { useState, useRef } from 'react';
 import { clsx } from 'clsx';
 import { useAppStore } from '@/lib/stores/app-store';
 import { motion, AnimatePresence } from 'framer-motion';
+import { analyzeIncident, SAMPLE_VOICE_NOTE } from '@/lib/api/mock';
+import type { AnalysisResult } from '@/lib/api/mock';
+import { OUTCOME_LABELS } from '@/lib/schemas/incident';
+import { OUTCOME_STYLES } from '@/lib/osha';
 
 type Step = 'describe' | 'extracting' | 'review' | 'submitted';
 
-interface ExtractedFacts {
-  employeeName: string;
-  date: string;
-  type: 'injury' | 'illness' | 'near-miss';
-  bodyPart: string;
-  location: string;
-  description: string;
-  severity: string;
-  treatments: string;
-  confidence: 'high' | 'medium' | 'low';
-}
-
-const SIMULATED_EXTRACTION: ExtractedFacts = {
-  employeeName: 'Marcus Johnson',
-  date: new Date().toISOString().split('T')[0],
-  type: 'injury',
-  bodyPart: 'Right hand',
-  location: 'Warehouse B - Loading Dock',
-  description: 'Employee caught hand between pallet and dock bumper while unloading delivery truck.',
-  severity: 'medical',
-  treatments: 'Sent to urgent care, X-ray ordered, splint applied',
-  confidence: 'high',
-};
-
 export function ReportForm() {
-  const { addIncident } = useAppStore();
+  const { addIncident, incidents } = useAppStore();
   const [step, setStep] = useState<Step>('describe');
   const [inputText, setInputText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [extractedFacts, setExtractedFacts] = useState<ExtractedFacts | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  function handleSubmitDescription() {
+  async function handleSubmitDescription() {
     if (!inputText.trim()) return;
     setStep('extracting');
-    setTimeout(() => {
-      setExtractedFacts(SIMULATED_EXTRACTION);
-      setStep('review');
-    }, 2200);
+    setResult(await analyzeIncident(inputText));
+    setStep('review');
   }
 
   function handleAcceptAndSubmit() {
-    if (!extractedFacts) return;
-    const id = `INC-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900) + 100).padStart(3, '0')}`;
+    if (!result) return;
+    const maxId = incidents.reduce((m, i) => Math.max(m, Number(i.id.replace('INC-', '')) || 0), 1000);
     addIncident({
-      id,
-      employeeName: extractedFacts.employeeName,
-      date: extractedFacts.date,
-      type: extractedFacts.type,
-      bodyPart: extractedFacts.bodyPart,
-      location: extractedFacts.location,
-      description: extractedFacts.description,
-      status: 'pending-review',
-      severity: extractedFacts.severity as any,
-      oshaRecordable: null,
+      id: `INC-${maxId + 1}`,
+      caseNumber: null,
+      employeeName: result.employeeName,
+      jobTitle: result.jobTitle,
+      date: result.date,
+      location: result.location,
+      description: result.description,
+      bodyPart: result.bodyPart,
+      caseType: 'injury',
+      daysAway: 0,
+      daysRestricted: result.daysRestricted,
+      privacyCase: false,
+      rawText: inputText,
+      facts: result.facts,
+      determination: result.determination,
+      review: { status: 'pending' },
+      severeAlert: result.severeAlert,
+      submittedBy: 'Test Manager',
       createdAt: new Date().toISOString(),
     });
     setStep('submitted');
@@ -70,7 +56,7 @@ export function ReportForm() {
   function handleReset() {
     setStep('describe');
     setInputText('');
-    setExtractedFacts(null);
+    setResult(null);
     setIsRecording(false);
   }
 
@@ -79,9 +65,7 @@ export function ReportForm() {
     if (!isRecording) {
       setTimeout(() => {
         setIsRecording(false);
-        setInputText(
-          "Marcus in warehouse B caught his right hand between a pallet and the dock bumper while unloading a delivery truck around 9am. We sent him to urgent care, they did an X-ray and put a splint on it. He can't use his right hand for at least a week."
-        );
+        setInputText(SAMPLE_VOICE_NOTE);
       }, 3000);
     }
   }
@@ -108,7 +92,7 @@ export function ReportForm() {
                 Describe what happened
               </h3>
               <p className="text-sm text-[var(--ink-muted)] max-w-md mx-auto">
-                Use your own words. Talk or type like you're telling a coworker. Our AI will extract the details and fill out the OSHA forms for you.
+                Use your own words. Talk or type like you&apos;re telling a coworker. Foreman pulls out the facts, checks them against OSHA&apos;s rules, and builds the case file.
               </p>
             </div>
 
@@ -119,7 +103,7 @@ export function ReportForm() {
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   rows={6}
-                  placeholder='Example: "John in building A slipped on a wet floor near the break room and hurt his lower back. He went to the clinic and they gave him muscle relaxants..."'
+                  placeholder='Example: "Mike slipped on the wet scaffold plank on level 3 and twisted his ankle. Clinic gave him a rigid splint and said no climbing for a week..."'
                   className="w-full p-5 pb-16 text-sm text-[var(--ink)] bg-transparent border-none outline-none resize-none placeholder:text-[var(--ink-faint)]"
                   style={{ fontFamily: 'var(--font-body)' }}
                 />
@@ -176,8 +160,8 @@ export function ReportForm() {
             <div className="mt-6 grid grid-cols-3 gap-3">
               {[
                 { icon: '1', text: 'You describe it in plain language' },
-                { icon: '2', text: 'AI extracts employee, body part, treatments' },
-                { icon: '3', text: 'Review the facts, then submit for OSHA classification' },
+                { icon: '2', text: 'AI pulls out the facts, with the words each came from' },
+                { icon: '3', text: 'OSHA rules decide; the safety manager signs off' },
               ].map((s) => (
                 <div key={s.icon} className="flex items-start gap-3 p-3 rounded-[var(--radius-md)] bg-[var(--card)] border border-[var(--border)]">
                   <span
@@ -216,7 +200,7 @@ export function ReportForm() {
               Reading your description and identifying employee, injuries, treatments, and location
             </p>
             <div className="mt-8 max-w-sm mx-auto space-y-3">
-              {['Employee name', 'Body part affected', 'Treatments given', 'Location identified'].map((label, i) => (
+              {['Employee and location', 'Body part and injury', 'Treatment and medication doses', 'Restrictions and days away'].map((label, i) => (
                 <motion.div
                   key={label}
                   initial={{ opacity: 0, x: -8 }}
@@ -242,7 +226,7 @@ export function ReportForm() {
           </motion.div>
         )}
 
-        {step === 'review' && extractedFacts && (
+        {step === 'review' && result && (
           <motion.div
             key="review"
             initial={{ opacity: 0, y: 12 }}
@@ -256,47 +240,32 @@ export function ReportForm() {
                   Review Extracted Details
                 </h3>
                 <p className="text-sm text-[var(--ink-muted)] mt-1">
-                  AI pulled these facts from your description. Edit anything that's wrong before submitting.
+                  AI only pulls out facts. It does not decide anything. Fields marked &ldquo;Check this&rdquo; were unclear in your note.
                 </p>
               </div>
-              <span
-                className={clsx(
-                  'text-[11px] font-medium px-2.5 py-1 rounded-full',
-                  extractedFacts.confidence === 'high'
-                    ? 'bg-[var(--engine-subtle)] text-[var(--engine)]'
-                    : extractedFacts.confidence === 'medium'
-                    ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
-                    : 'bg-[var(--alert-subtle)] text-[var(--alert)]'
-                )}
-              >
-                {extractedFacts.confidence === 'high' ? 'High' : extractedFacts.confidence === 'medium' ? 'Medium' : 'Low'} confidence
+              <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-[var(--blue-subtle)] text-[var(--blue)] shrink-0">
+                Demo mode
               </span>
             </div>
 
             <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--card)] p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <FactField label="Employee Name" value={extractedFacts.employeeName} source="your description" />
-                <FactField label="Date" value={extractedFacts.date} source="auto-detected" />
-                <FactField label="Incident Type" value={extractedFacts.type} source="classified from description" />
-                <FactField label="Body Part" value={extractedFacts.bodyPart} source='"caught his right hand"' />
-                <FactField label="Location" value={extractedFacts.location} source='"warehouse B... dock bumper"' />
-                <FactField label="Severity" value={extractedFacts.severity} source="urgent care + splint = medical treatment" />
-              </div>
-              <div className="mt-5 pt-5 border-t border-[var(--border)]">
-                <FactField label="Treatments" value={extractedFacts.treatments} source='"X-ray and put a splint on it"' fullWidth />
-              </div>
-              <div className="mt-5 pt-5 border-t border-[var(--border)]">
-                <FactField label="AI Summary" value={extractedFacts.description} source="generated from your words" fullWidth />
+                {result.facts.map((f) => (
+                  <FactField key={f.key} label={f.label} value={f.value} source={f.source} lowConfidence={f.confidence === 'low'} />
+                ))}
               </div>
             </div>
 
-            <div className="mt-4 rounded-[var(--radius-md)] bg-[var(--accent-subtle)] border border-[var(--accent)] border-opacity-20 p-4">
+            <div className="mt-4 rounded-[var(--radius-md)] bg-[var(--accent-subtle)] p-4">
               <div className="flex items-start gap-3">
                 <SparklesIcon className="w-4 h-4 text-[var(--accent)] mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-xs font-medium text-[var(--accent)]">What happens next</p>
                   <p className="text-xs text-[var(--ink-muted)] mt-1">
-                    After you submit, the rules engine will check OSHA 1904.5 through 1904.11 to determine if this is recordable. A safety manager will then review and accept or override the classification.
+                    The rules engine checks these facts against OSHA 1904.5 through 1904.11. Missing facts become questions, never a &ldquo;not recordable.&rdquo; The safety manager signs off before anything reaches the 300 log.
+                  </p>
+                  <p className="text-[11px] text-[var(--ink-faint)] mt-2">
+                    Demo mode shows a sample result until the backend is connected.
                   </p>
                 </div>
               </div>
@@ -315,7 +284,7 @@ export function ReportForm() {
                 className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white rounded-[var(--radius-md)] hover:opacity-90 transition-colors"
                 style={{ backgroundColor: 'var(--accent)', transitionDuration: 'var(--duration-fast)' }}
               >
-                Submit for Classification
+                Facts look right, submit
                 <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 8h10M9 4l4 4-4 4" />
                 </svg>
@@ -345,11 +314,16 @@ export function ReportForm() {
             <h3 className="text-lg font-semibold text-[var(--ink)] mb-2" style={{ fontFamily: 'var(--font-display)' }}>
               Incident Submitted
             </h3>
-            <p className="text-sm text-[var(--ink-muted)] mb-2">
-              The rules engine is now classifying this incident against OSHA 1904.5-11.
-            </p>
+            {result && (
+              <p className="text-sm text-[var(--ink-muted)] mb-2">
+                Rules engine result:{' '}
+                <span className="font-semibold" style={{ color: OUTCOME_STYLES[result.determination.outcome].text }}>
+                  {OUTCOME_LABELS[result.determination.outcome]}
+                </span>
+              </p>
+            )}
             <p className="text-xs text-[var(--ink-faint)] mb-6">
-              A safety manager will review the classification shortly.
+              It is waiting in the Review Queue for the safety manager to sign off.
             </p>
             <button
               onClick={handleReset}
@@ -365,19 +339,17 @@ export function ReportForm() {
   );
 }
 
-function FactField({ label, value, source, fullWidth }: { label: string; value: string; source: string; fullWidth?: boolean }) {
+function FactField({ label, value, source, lowConfidence }: { label: string; value: string | null; source: string | null; lowConfidence: boolean }) {
   return (
-    <div className={fullWidth ? '' : ''}>
+    <div className="min-w-0">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--ink-faint)]" style={{ fontFamily: 'var(--font-body)' }}>
-          {label}
-        </span>
-        <span className="text-[10px] text-[var(--accent)] font-mono" style={{ fontFamily: 'var(--font-mono)' }}>
-          AI-extracted
-        </span>
+        <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--ink-faint)]">{label}</span>
+        {lowConfidence && (
+          <span className="text-[10px] font-medium px-1.5 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)]">Check this</span>
+        )}
       </div>
-      <p className="text-sm font-medium text-[var(--ink)] capitalize">{value}</p>
-      <p className="text-[11px] text-[var(--ink-faint)] mt-0.5 italic">Source: {source}</p>
+      <p className="text-sm font-medium text-[var(--ink)]">{value ?? <span className="text-[var(--ink-faint)] font-normal">Not mentioned</span>}</p>
+      {source && <p className="text-[11px] text-[var(--ink-faint)] mt-0.5 italic">&ldquo;{source}&rdquo;</p>}
     </div>
   );
 }

@@ -1,109 +1,143 @@
 import { create } from 'zustand';
+import type { AuditEntry, Classification, Establishment, Incident } from '../schemas/incident';
+import { buildMockIncidents, MOCK_ESTABLISHMENT } from '../api/mock';
+import { nextCaseNumber } from '../osha';
 
-interface Incident {
-  id: string;
-  employeeName: string;
-  date: string;
-  type: 'injury' | 'illness' | 'near-miss';
-  bodyPart: string;
-  location: string;
-  description: string;
-  status: 'pending-review' | 'reviewed' | 'recorded' | 'rejected';
-  severity: 'first-aid' | 'medical' | 'restricted' | 'days-away' | 'death';
-  oshaRecordable: boolean | null;
-  createdAt: string;
-}
+const CURRENT_USER = 'Test Manager';
 
 interface AppState {
   incidents: Incident[];
+  establishment: Establishment;
+  auditLog: AuditEntry[];
   sidebarOpen: boolean;
   activeView: string;
   setSidebarOpen: (open: boolean) => void;
   setActiveView: (view: string) => void;
   addIncident: (incident: Incident) => void;
-  updateIncident: (id: string, updates: Partial<Incident>) => void;
+  acceptDetermination: (id: string) => void;
+  overrideDetermination: (id: string, outcome: 'recordable' | 'not-recordable', classification: Classification | null, reason: string) => void;
+  answerQuestions: (id: string, answers: Record<string, string>) => void;
+  markSevereReported: (id: string) => void;
+  updateEstablishment: (updates: Partial<Establishment>) => void;
 }
 
-const MOCK_INCIDENTS: Incident[] = [
-  {
-    id: 'INC-2024-001',
-    employeeName: 'Marcus Johnson',
-    date: '2024-10-14',
-    type: 'injury',
-    bodyPart: 'Right hand',
-    location: 'Warehouse B - Loading Dock',
-    description: 'Employee caught hand between pallet and dock bumper while unloading delivery truck.',
-    status: 'pending-review',
-    severity: 'medical',
-    oshaRecordable: null,
-    createdAt: '2024-10-14T09:23:00Z',
-  },
-  {
-    id: 'INC-2024-002',
-    employeeName: 'Sarah Chen',
-    date: '2024-10-12',
-    type: 'injury',
-    bodyPart: 'Lower back',
-    location: 'Building A - 3rd Floor Office',
-    description: 'Employee reported lower back pain after lifting file boxes from floor level without proper technique.',
-    status: 'reviewed',
-    severity: 'restricted',
-    oshaRecordable: true,
-    createdAt: '2024-10-12T14:15:00Z',
-  },
-  {
-    id: 'INC-2024-003',
-    employeeName: 'James Rivera',
-    date: '2024-10-10',
-    type: 'near-miss',
-    bodyPart: 'N/A',
-    location: 'Parking Lot C',
-    description: 'Forklift nearly struck pedestrian near crosswalk. No contact made. Driver visibility obstructed by stacked pallets.',
-    status: 'recorded',
-    severity: 'first-aid',
-    oshaRecordable: false,
-    createdAt: '2024-10-10T16:45:00Z',
-  },
-  {
-    id: 'INC-2024-004',
-    employeeName: 'Ana Martinez',
-    date: '2024-10-09',
-    type: 'illness',
-    bodyPart: 'Respiratory',
-    location: 'Chemical Storage Room 2',
-    description: 'Employee developed respiratory irritation after prolonged exposure to cleaning chemicals without adequate ventilation.',
-    status: 'reviewed',
-    severity: 'medical',
-    oshaRecordable: true,
-    createdAt: '2024-10-09T11:30:00Z',
-  },
-  {
-    id: 'INC-2024-005',
-    employeeName: 'David Park',
-    date: '2024-10-07',
-    type: 'injury',
-    bodyPart: 'Left ankle',
-    location: 'Stairwell B - Between Floors 2-3',
-    description: 'Employee slipped on wet step and twisted ankle. Wet floor sign was not posted after mopping.',
-    status: 'recorded',
-    severity: 'days-away',
-    oshaRecordable: true,
-    createdAt: '2024-10-07T08:12:00Z',
-  },
-];
+function audit(incidentId: string, action: string, detail: string, actor = CURRENT_USER, offsetMs = 0): AuditEntry {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    at: new Date(Date.now() + offsetMs).toISOString(),
+    actor,
+    incidentId,
+    action,
+    detail,
+  };
+}
+
+function seedAudit(incidents: Incident[]): AuditEntry[] {
+  return incidents
+    .flatMap((i) => {
+      const rows: AuditEntry[] = [
+        { id: `${i.id}-s`, at: i.createdAt, actor: i.submittedBy, incidentId: i.id, action: 'Submitted', detail: 'Incident reported' },
+        { id: `${i.id}-e`, at: new Date(new Date(i.createdAt).getTime() + 1000).toISOString(), actor: `Rules engine ${i.determination.engineVersion}`, incidentId: i.id, action: 'Determined', detail: `${i.determination.outcome} (${i.determination.citations.join(', ')})` },
+      ];
+      if (i.review.status !== 'pending') {
+        rows.push({ id: `${i.id}-r`, at: i.review.at!, actor: i.review.reviewer!, incidentId: i.id, action: 'Accepted', detail: i.caseNumber ? `Logged as case ${i.caseNumber}` : 'Not logged' });
+      }
+      return rows;
+    })
+    .sort((a, b) => b.at.localeCompare(a.at));
+}
+
+const initialIncidents = buildMockIncidents();
 
 export const useAppStore = create<AppState>((set) => ({
-  incidents: MOCK_INCIDENTS,
+  incidents: initialIncidents,
+  establishment: MOCK_ESTABLISHMENT,
+  auditLog: seedAudit(initialIncidents),
   sidebarOpen: true,
   activeView: 'dashboard',
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setActiveView: (view) => set({ activeView: view }),
+
   addIncident: (incident) =>
-    set((state) => ({ incidents: [incident, ...state.incidents] })),
-  updateIncident: (id, updates) =>
-    set((state) => ({
-      incidents: state.incidents.map((inc) =>
-        inc.id === id ? { ...inc, ...updates } : inc
-      ),
+    set((s) => ({
+      incidents: [incident, ...s.incidents],
+      auditLog: [
+        audit(incident.id, 'Determined', `${incident.determination.outcome} (${incident.determination.citations.join(', ')})`, `Rules engine ${incident.determination.engineVersion}`, 1000),
+        audit(incident.id, 'Submitted', 'Incident reported'),
+        ...s.auditLog,
+      ],
     })),
+
+  acceptDetermination: (id) =>
+    set((s) => {
+      const inc = s.incidents.find((i) => i.id === id);
+      if (!inc || inc.determination.outcome === 'needs-info') return s;
+      const recordable = inc.determination.outcome === 'recordable';
+      const caseNumber = recordable ? nextCaseNumber(s.incidents, Number(inc.date.slice(0, 4))) : null;
+      return {
+        incidents: s.incidents.map((i) =>
+          i.id === id
+            ? {
+                ...i,
+                caseNumber,
+                review: {
+                  ...i.review,
+                  status: 'accepted',
+                  reviewer: CURRENT_USER,
+                  at: new Date().toISOString(),
+                  outcome: recordable ? 'recordable' : 'not-recordable',
+                  classification: i.determination.classification,
+                },
+              }
+            : i
+        ),
+        auditLog: [audit(id, 'Accepted', caseNumber ? `Logged as case ${caseNumber}` : 'Not logged'), ...s.auditLog],
+      };
+    }),
+
+  overrideDetermination: (id, outcome, classification, reason) =>
+    set((s) => {
+      const inc = s.incidents.find((i) => i.id === id);
+      if (!inc || !reason.trim()) return s;
+      const caseNumber = outcome === 'recordable' ? nextCaseNumber(s.incidents, Number(inc.date.slice(0, 4))) : null;
+      return {
+        incidents: s.incidents.map((i) =>
+          i.id === id
+            ? {
+                ...i,
+                caseNumber,
+                review: {
+                  ...i.review,
+                  status: 'overridden',
+                  reviewer: CURRENT_USER,
+                  at: new Date().toISOString(),
+                  outcome,
+                  classification: outcome === 'recordable' ? classification : null,
+                  overrideReason: reason.trim(),
+                },
+              }
+            : i
+        ),
+        auditLog: [
+          audit(id, 'Overridden', `Engine said ${inc.determination.outcome}, set to ${outcome}${caseNumber ? ` (case ${caseNumber})` : ''}. Reason: ${reason.trim()}`),
+          ...s.auditLog,
+        ],
+      };
+    }),
+
+  answerQuestions: (id, answers) =>
+    set((s) => ({
+      incidents: s.incidents.map((i) => (i.id === id ? { ...i, review: { ...i.review, answers } } : i)),
+      auditLog: [audit(id, 'Answered questions', Object.values(answers).join(' | ')), ...s.auditLog],
+    })),
+
+  markSevereReported: (id) =>
+    set((s) => ({
+      incidents: s.incidents.map((i) =>
+        i.id === id && i.severeAlert ? { ...i, severeAlert: { ...i.severeAlert, reportedAt: new Date().toISOString() } } : i
+      ),
+      auditLog: [audit(id, 'Reported to OSHA', 'Severe injury report marked as filed'), ...s.auditLog],
+    })),
+
+  updateEstablishment: (updates) => set((s) => ({ establishment: { ...s.establishment, ...updates } })),
 }));

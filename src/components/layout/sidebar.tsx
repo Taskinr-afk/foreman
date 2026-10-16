@@ -9,11 +9,13 @@ const NAV_ITEMS = [
   { id: 'report', label: 'Report Incident', icon: PlusCircleIcon },
   { id: 'review', label: 'Review Queue', icon: CheckCircleIcon },
   { id: 'log', label: 'OSHA 300 Log', icon: TableIcon },
+  { id: 'audit', label: 'Audit Trail', icon: ClockIcon },
   { id: 'settings', label: 'Settings', icon: GearIcon },
 ];
 
 export function Sidebar() {
-  const { sidebarOpen, activeView, setActiveView, setSidebarOpen } = useAppStore();
+  const { sidebarOpen, activeView, setActiveView, setSidebarOpen, incidents } = useAppStore();
+  const pendingCount = incidents.filter((i) => i.review.status === 'pending').length;
 
   return (
     <>
@@ -86,14 +88,14 @@ export function Sidebar() {
                 <span className="relative z-10 flex items-center gap-3 w-full">
                   <Icon className="w-4 h-4 flex-shrink-0" />
                   {item.label}
-                  {item.id === 'review' && (
+                  {item.id === 'review' && pendingCount > 0 && (
                     <motion.span
                       className="ml-auto text-[11px] font-medium bg-[var(--accent)] text-white px-1.5 py-0.5 rounded-full"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 15, delay: 0.2 }}
                     >
-                      2
+                      {pendingCount}
                     </motion.span>
                   )}
                 </span>
