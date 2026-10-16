@@ -55,7 +55,9 @@ const ESTABLISHMENT_FIELDS: { key: keyof Establishment; label: string; numeric?:
   { key: 'state', label: 'State' },
   { key: 'zip', label: 'ZIP' },
   { key: 'annualAverageEmployees', label: 'Annual Average Employees', numeric: true },
-  { key: 'totalHoursWorked', label: 'Total Hours Worked (this year)', numeric: true, hint: 'Used for TRIR and DART' },
+  { key: 'totalHoursWorked', label: 'Total Hours Worked (this year)', numeric: true, hint: 'Used to calculate your injury rates' },
+  { key: 'injuryRateTarget', label: 'Injury Rate Target', numeric: true, hint: 'Ring turns red at or above this' },
+  { key: 'missedWorkRateTarget', label: 'Missed Work Rate Target', numeric: true, hint: 'Many big clients cap suppliers around 2.5' },
 ];
 
 export function SettingsView() {
@@ -149,6 +151,7 @@ export function SettingsView() {
               <input
                 type={f.numeric ? 'number' : 'text'}
                 min={f.numeric ? 0 : undefined}
+                step={f.numeric ? 'any' : undefined}
                 value={establishment[f.key]}
                 onChange={(e) =>
                   updateEstablishment({ [f.key]: f.numeric ? Math.max(0, Number(e.target.value)) : e.target.value })

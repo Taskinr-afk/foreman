@@ -77,7 +77,8 @@ export function RecentIncidents() {
                 <span className="text-[11px] font-medium" style={{ color: OUTCOME_STYLES[outcome].text }}>
                   {OUTCOME_LABELS[outcome]}
                 </span>
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: review.bg, color: review.text }}>
+                <span className="text-[11px] text-[var(--ink-faint)]">·</span>
+                <span className="text-[11px]" style={{ color: incident.review.status === 'pending' ? review.text : 'var(--ink-faint)' }}>
                   {REVIEW_LABELS[incident.review.status]}
                 </span>
               </div>

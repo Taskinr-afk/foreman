@@ -20,6 +20,8 @@ export const MOCK_ESTABLISHMENT: Establishment = {
   zip: '10001',
   annualAverageEmployees: 120,
   totalHoursWorked: 240000,
+  injuryRateTarget: 3,
+  missedWorkRateTarget: 2.5,
 };
 
 export function buildMockIncidents(now = Date.now()): Incident[] {

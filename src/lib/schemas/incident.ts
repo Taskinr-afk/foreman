@@ -82,6 +82,8 @@ export interface Establishment {
   zip: string;
   annualAverageEmployees: number;
   totalHoursWorked: number;
+  injuryRateTarget: number;
+  missedWorkRateTarget: number;
 }
 
 export interface AuditEntry {
