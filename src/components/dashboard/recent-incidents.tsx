@@ -36,7 +36,7 @@ export function RecentIncidents() {
       </div>
 
       <div className="divide-y divide-[var(--border)]">
-        {incidents.slice(0, 6).map((incident, i) => {
+        {incidents.slice(0, 5).map((incident, i) => {
           const outcome = finalOutcome(incident);
           const review = REVIEW_STYLES[incident.review.status];
           return (

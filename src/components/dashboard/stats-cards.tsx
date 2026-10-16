@@ -3,6 +3,7 @@
 import { useAppStore } from '@/lib/stores/app-store';
 import { isDart, isLogged, rate } from '@/lib/osha';
 import { motion } from 'framer-motion';
+import { CalendarIcon, Chip, PeopleIcon } from './chip';
 
 const SIZE = 104;
 const STROKE = 9;
@@ -71,7 +72,7 @@ function Ring({ value, unit, fraction, color, label, sub, onClick, index }: Ring
   );
 }
 
-function Card({ title, note, children, delay }: { title: string; note?: string; children: React.ReactNode; delay: number }) {
+function Card({ title, note, children, delay }: { title: string; note?: React.ReactNode; children: React.ReactNode; delay: number }) {
   return (
     <motion.div
       className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--card)] p-5"
@@ -79,11 +80,11 @@ function Card({ title, note, children, delay }: { title: string; note?: string; 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="flex items-baseline justify-between gap-3 mb-4">
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <h3 className="text-sm font-semibold text-[var(--ink)]" style={{ fontFamily: 'var(--font-display)' }}>
           {title}
         </h3>
-        {note && <span className="text-[11px] text-[var(--ink-faint)]">{note}</span>}
+        {note}
       </div>
       <div className="grid grid-cols-2 gap-4">{children}</div>
     </motion.div>
@@ -129,7 +130,11 @@ export function StatsCards() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <Card title="Cases" note={`${total} reported this year`} delay={0}>
+      <Card
+        title="Cases"
+        note={<Chip icon={<CalendarIcon />}>{total} reported in {new Date().getFullYear()}</Chip>}
+        delay={0}
+      >
         <Ring
           index={0}
           value={String(needsSignoff)}
@@ -151,7 +156,15 @@ export function StatsCards() {
           onClick={() => setActiveView('log')}
         />
       </Card>
-      <Card title="Injury Rates" note="Per 100 full-time workers" delay={0.06}>
+      <Card
+        title="Injury Rates"
+        note={
+          <Chip icon={<PeopleIcon />} title="OSHA standard: 200,000 hours, which is 100 people working 40 hours a week for 50 weeks">
+            Per 100 full-time workers
+          </Chip>
+        }
+        delay={0.06}
+      >
         {rateRing(trir, establishment.injuryRateTarget, 'Injury Rate', 'TRIR', 2)}
         {rateRing(dart, establishment.missedWorkRateTarget, 'Missed Work', 'DART', 3)}
       </Card>
