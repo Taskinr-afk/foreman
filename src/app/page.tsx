@@ -3,6 +3,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
 import { AppShell } from '@/components/layout/app-shell';
+import { SignupFlow } from '@/components/onboarding/signup-flow';
 
 const YELLOW = '#FFE500';
 const BLACK = '#0A0A0A';
@@ -603,6 +604,7 @@ function Footer() {
 export default function LandingPage() {
   const [signInOpen, setSignInOpen] = useState(false);
   const [showApp, setShowApp] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
 
   useEffect(() => {
     try {
@@ -615,7 +617,12 @@ export default function LandingPage() {
     setShowApp(true);
   };
 
+  const startSignup = () => {
+    setShowSignup(true);
+  };
+
   if (showApp) return <AppShell />;
+  if (showSignup) return <SignupFlow onComplete={enterApp} onBack={() => setShowSignup(false)} />;
 
   return (
     <>
@@ -623,12 +630,12 @@ export default function LandingPage() {
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
       `}</style>
       <div className="w-full min-h-screen" style={{ background: BLACK }}>
-        <Nav onSignIn={() => setSignInOpen(true)} onEnterApp={enterApp} />
-        <Hero onEnterApp={enterApp} />
+        <Nav onSignIn={() => setSignInOpen(true)} onEnterApp={startSignup} />
+        <Hero onEnterApp={startSignup} />
         <Features />
         <Stats />
-        <BuiltFor onEnterApp={enterApp} />
-        <CTA onEnterApp={enterApp} />
+        <BuiltFor onEnterApp={startSignup} />
+        <CTA onEnterApp={startSignup} />
         <Footer />
         <SignInModal open={signInOpen} onClose={() => setSignInOpen(false)} onEnterApp={enterApp} />
       </div>
